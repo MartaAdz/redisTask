@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/redis.dir/main.cpp.o  -o redis -lhiredis 
