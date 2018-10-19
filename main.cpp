@@ -21,7 +21,8 @@
         std::cin>> name;
         int numGenerator = (rand()%999) +100;
         std::string accountNumber=std::to_string(numGenerator);
-        void *setUser = redisCommand (c, "HMSET user username %s account %i", name, accountNumber);
+        void *setUser = redisCommand (c, "HMSET user username %s account multiple", name);
+        void *setAccount = redisCommand (c, "LPUSH multiple %s", accountNumber);
 
 
         //it's an account. it can be whether credit or debit
@@ -33,24 +34,24 @@
             std::cout<<"Set your credit limit";
             int creditLimit;
             std::cin>>creditLimit;
-            void *setAccountType = redisCommand (c, "HSET user:account accountType credit");
-            void *setAccountNumber = redisCommand (c, "HSET user:account accountNumber %s", accountNumber);
-            void *setAccountLimit = redisCommand (c, "SET user:account:accountNumber:%s  %i", accountNumber, creditLimit);
+            void *setAccountType = redisCommand (c, "HSET user:account:multiple %s:accountType credit", accountNumber);
+            void *setAccountLimit = redisCommand (c, "HSET user:account:multiple %s:limit  %i",
+                    accountNumber, creditLimit);
+            void *setAccountFunds = redisCommand (c, "HSET user:account:multiple %s:funds  %i",
+                    accountNumber, creditLimit);
         }
         else {
             std::cout<<"how much do you have in your account?";
             int funds;
             std::cin>>funds;
-            void *setAccountType = redisCommand (c, "HSET user:account accountType debit");
-            void *setAccountNumber = redisCommand (c, "HSET user:account accountNumber %s", accountNumber);
-            void *setAccountLimit = redisCommand (c, "SET user:account:accountNumber:%s  %i", accountNumber, funds);
+            void *setAccountType = redisCommand (c, "HSET user:account:multiple %s:accountType debit", accountNumber);
+            void *setAccountFunds = redisCommand (c, "HSET user:account:multiple accountNumber:%s %i",
+                    accountNumber, funds);
         }
 
         //one more account
-        void *accountList= redisCommand (c, "HSET user:account:accountNumber multiple");
-        void *accountListTransfer= redisCommand (c, "LPUSH multiple %s", accountNumber);
         int numGenerator2 = (rand()%999) +100;
-        std::string accountNumber2=std::to_string(numGenerator);
+        std::string accountNumber2=std::to_string(numGenerator2);
         if (accountNumber != accountNumber2) {
             void *newAccount = redisCommand(c, "LPUSH multiple %s", accountNumber2);
         } else {
@@ -61,7 +62,7 @@
 
         //std::cout<<"choose account";
 
-
+        std::cout<<accountNumber<<" "<<accountNumber2<<std::endl;
         std::cout<<"1-payment \n2-transfer funds to different account";
         unsigned int operation;
         std::cin>>operation;
