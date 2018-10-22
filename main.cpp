@@ -63,35 +63,57 @@ void chooseAccount(redisContext *c){
         int option1;
         std::cin>>option1;
 
-        if(option1=1) {
+        if(option1==1) {
 
             //creating new user name
             std::cout << "User name: ";
             std::string name;
             std::cin >> name;
-            void *setUser = redisCommand(c, "HMSET user username %s account multiple", name);
+
+            std::cout << "Password: ";
+            std::string password;
+            std::cin >> password;
+
+            int ID_Generator = (rand() % 9999) + 1000;
+            std::string ID = std::to_string(ID_Generator);
+
+            void *setUser = redisCommand(c, "HMSET user:%s username %s password %s", ID.c_str(), name, password);
 
             //generating an account for a new user
             int accGenerator = (rand() % 9999) + 1000;
             std::string accountNumber = std::to_string(accGenerator);
-            void *setAccount = redisCommand(c, "LPUSH user:account:multiple %s", accountNumber.c_str());
+            void *setAccount = redisCommand(c, "LPUSH %s:account %s", ID.c_str(), accountNumber.c_str());
 
-            redisReply *getAccountNumber = (redisReply *) redisCommand(c, "LRANGE user:account:multiple 0 0");
-            std::string accNum (getAccountNumber->str);
-            std::cout<<"actual num: "<<accGenerator<<"Num i get : "<<accNum<<std::endl;
+            /* redisReply *getAccountNumber = (redisReply *) redisCommand(c, "LRANGE %s:account 0 0", ID.c_str());
+             std::cout<<"actual num: "<<accGenerator<<"Num i get : "<<getAccountNumber->str<<std::endl;
+             */
 
 
             //checking if user has been created
             if (setUser != NULL) {
-                std::cout << "User has been created" << std::endl;
+                std::cout << "User has been created. ID " << ID << std::endl;
                 freeReplyObject(setUser);
             } else {
                 std::cout << "User has NOT been created" << c->err << std::endl;
             }
-        }
+        }else if(option1==2){
 
-        else if(option1=2){
-                std::cout<<"log in";
+            std::cout << "ID: ";
+            std::string id;
+            std::cin >> id;
+
+            std::cout << "Password: ";
+            std::string password;
+            std::cin >> password;
+
+            redisReply *getUser = (redisReply *) redisCommand(c, "HGET  user:%s password:%s", id.c_str(), password.c_str());
+
+            if (getUser != NULL) {
+                std::cout << "Logged in " << std::endl;
+                freeReplyObject(getUser);
+            } else {
+                std::cout << "No such user" << c->err << std::endl;
+            }
 
 
         }
