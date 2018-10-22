@@ -3,52 +3,143 @@
 #include <vector>
 #include <hiredis/hiredis.h>
 
-std::string createAccount(std::string &accountNumber, redisContext *c){
-    int accGenerator2 = (rand() % 9999) + 1000;
-    std::string accountNumber2 = std::to_string (accGenerator2);
-    do {
-        if (accountNumber != accountNumber2) {
-            void *newAccount = redisCommand(c, "RPUSH user:account:multiple %s", accountNumber2.c_str());
-        } else accountNumber2 = (rand() % 9999) + 1000;
-    }while (accountNumber==accountNumber2);
+std::string createAccount(redisContext *c, std::string ID){
 
-    return accountNumber2;
+    int accGenerator = (rand() % 9999) + 1000;
+    std::string accountNumber = std::to_string (accGenerator);
+
+    void *newAccount = redisCommand(c, "SET %s:account %s", ID.c_str(), accountNumber.c_str());
+
+    return accountNumber;
 };
+std::string getAccountNumber(redisContext *c, std::string &ID){
 
-std::string getAccount(redisContext *c){
-
-    redisReply *getAccountNumber = (redisReply *) redisCommand(c, "LRANGE user:account:multiple 0 0");
-    std::cout<<getAccountNumber->str<<std::endl;
+    redisReply *getAccountNumber = (redisReply *) redisCommand(c, "GET %s:account", ID.c_str());
     return getAccountNumber->str;
+}
 
-};
+std::string getBalance (redisContext *c, std::string &ID, std::string &accountNumber){
 
-void chooseAccount(redisContext *c){
+    redisReply *getFunds = (redisReply *) redisCommand(c, "GET  %s:account:%s",
+                                                              ID.c_str(),accountNumber.c_str());
+    return getFunds->str;
+}
 
-    //get account number in case of multiple accounts
-    int accCount;
-    redisReply *accountCount = (redisReply *) redisCommand(c, "LLEN user:account:multiple");
-    accCount = accountCount->integer;
-    std::cout<<"acc Count: "<<accCount<<std::endl;
-   /* std::vector<std::string> accountNumbers;
-    int a = 0, b = 0;
+std::string getType (redisContext *c, std::string &ID, std::string &accountNumber){
 
-    for (int i = 0; i < accCount; ++i) {
-        redisReply *accountNumber= (redisReply *) redisCommand(c, "LRANGE user:account:multiple %i %i", a, b);
-        accountNumbers.push_back(accountNumber->str);
-        a++;
-        b++;
-    }
+    redisReply *getType = (redisReply *) redisCommand(c, "GET  %s:account:%s:type",
+                                                              ID.c_str(),accountNumber.c_str());
+    return getType->str;
+}
 
-    for (int j = 0; j < accountNumbers.size(); ++j) {
-        std::cout<<accountNumbers[j]<<std::endl;
-    }
+
+void menu (std::string &ID, redisContext *c){
+    int option2;
+    std::cout<<"1-Check balance \n2-Open a new credit account \n3-Open a new debit account"
+    "\n4-Pay a bill \n6-Transfer money\n0-Quit\nEnter your option: ";
+    std::cin>>option2;
+    while (option2!=0){
+
+    if (option2==1){
+        std::string accountNumber = getAccountNumber(c, ID);
+        if (!getAccountNumber(c, ID).empty()) {
+            std::cerr << "Account could not be accessed" << std::endl;
+        }
+        else if (!getBalance(c, ID, accountNumber).empty()) {
+            std::cout << "Account funds: " << getBalance(c, ID, accountNumber)<< std::endl;
+        } else {
+            std::cerr << "Funds could not be accessed" << std::endl;
+        }
+
+        std::cout<<"next option: ";
+        std::cin>>option2;
+
+    } else if (option2 ==2) {
+
+    //create a new account
+    std::string accountNumber = createAccount(c, ID);
+
+    //setting type to credit
+    void *setAccountType = redisCommand(c, "SET %s:account:%s:type credit", ID.c_str(),
+                                        accountNumber.c_str());
+
+    std::cout << "Set your funds: ";
+    int funds;
+    std::cin >> funds;
+
+    void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
+                                         accountNumber.c_str(), funds);
+    //getting the balance
+    std::cout << "Account funds have been set to " << getBalance(c, ID, accountNumber)<< std::endl;
+
+    std::cout<<"next option: ";
+    std::cin>>option2;
+
+
+} else if(option2==3) {
+
+    //create a new account
+    std::string accountNumber = createAccount(c, ID);
+
+    //setting type to credit
+    void *setAccountType = redisCommand(c, "SET %s:account:%s:type debit", ID.c_str(),
+        accountNumber.c_str());
+
+    std::cout << "Set your funds: ";
+    int funds;
+    std::cin >> funds;
+
+    void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
+                                             accountNumber.c_str(), funds);
+
+    //getting the balance
+    std::cout << "Account funds have been set to " << getBalance(c, ID, accountNumber)<< std::endl;
+
+    std::cout<<"next option: ";
+    std::cin>>option2;
+
+} else if(option2==4){
+
+
+    std::cout << "Amount to pay: ";
+    int amount;
+    std::cin >> amount;
+
+    amount *= (-1);
+
+    std::string accountNumber = getAccountNumber(c, ID);
+
+    void *watch = redisCommand(c, "WATCH %s:account:%s", ID.c_str(), accountNumber.c_str());
+    void *multi = redisCommand(c, "MULTI");
+
+    void *payment = redisCommand(c, "INCRBY %s:account:%s %i", accountNumber.c_str(), amount);
+
+    void *exitOperation = redisCommand(c, "EXEC");}
+
+/*
+case '6':
+std::cout << "Amount to transfer: ";
+int amount;
+std::cin >> amount;
+amount *= (-1);
+
+void *watch = redisCommand(c, "WATCH user:account:multiple:%s:funds", accountNumber.c_str());
+void *multi = redisCommand(c, "MULTI");
+void *payment = redisCommand(c, "INCRBY user:account:multiple:%s:funds %i", accountNumber.c_str(), amount);
+
+amount *= (-1);
+
+void *paymentReceive = redisCommand(c, "INCRBY user:account:multiple:%s:funds %i",
+                                    accountNumber2.c_str(), amount);
+void *exitOperation = redisCommand(c, "EXEC");
 */
 
-};
+}
+
+}
 
 
-    int main() {
+int main() {
         redisContext *c = redisConnect("127.0.0.1", 6379);
         if (c == NULL || c->err) {
             if (c) {
@@ -80,13 +171,11 @@ void chooseAccount(redisContext *c){
             void *setUser = redisCommand(c, "HMSET user:%s username %s password %s", ID.c_str(), name, password);
 
             //generating an account for a new user
-            int accGenerator = (rand() % 9999) + 1000;
-            std::string accountNumber = std::to_string(accGenerator);
-            void *setAccount = redisCommand(c, "LPUSH %s:account %s", ID.c_str(), accountNumber.c_str());
+            createAccount(c, ID);
 
-            /* redisReply *getAccountNumber = (redisReply *) redisCommand(c, "LRANGE %s:account 0 0", ID.c_str());
-             std::cout<<"actual num: "<<accGenerator<<"Num i get : "<<getAccountNumber->str<<std::endl;
-             */
+             /*redisReply *getAccountNumber = (redisReply *) redisCommand(c, "LRANGE %s:account 0 0", ID.c_str());
+             std::cout<<getAccountNumber->str<<std::endl;
+*/
 
 
             //checking if user has been created
@@ -96,17 +185,20 @@ void chooseAccount(redisContext *c){
             } else {
                 std::cout << "User has NOT been created" << c->err << std::endl;
             }
+
+            menu(ID, c);
+
         }else if(option1==2){
 
             std::cout << "ID: ";
-            std::string id;
-            std::cin >> id;
+            std::string ID;
+            std::cin >> ID;
 
             std::cout << "Password: ";
             std::string password;
             std::cin >> password;
 
-            redisReply *getUser = (redisReply *) redisCommand(c, "HGET  user:%s password:%s", id.c_str(), password.c_str());
+            redisReply *getUser = (redisReply *) redisCommand(c, "GET user:%s password:%s", ID.c_str(), password.c_str());
 
             if (getUser != NULL) {
                 std::cout << "Logged in " << std::endl;
@@ -115,107 +207,9 @@ void chooseAccount(redisContext *c){
                 std::cout << "No such user" << c->err << std::endl;
             }
 
-
         }
 
 
-
-        int option2;
-        std::cout<<"1-Check balance \n2-Open a new credit account \n3-Open a new debit account"
-                   "\n5-Pay a bill \n6-Transfer money\n0-Quit\nEnter your option: ";
-        std::cin>>option2;
-        while (option2!=0){
-
-            if(option2==1){
-                //choosing account
-                chooseAccount(c);
-
-                //getting account from database
-                std::string accNum = getAccount(c);
-
-                //getting the balance
-                redisReply *getAccountFunds = (redisReply *) redisCommand(c, "GET  user:account:multiple:%s:funds",
-                                                                          accNum.c_str());
-
-                //printing the response
-                if (getAccountFunds != NULL && getAccountFunds->type == REDIS_REPLY_STRING) {
-                    std::cout << "Account funds: " << getAccountFunds->str << std::endl;
-                } else {
-                    std::cerr << "Funds could not be accessed" << std::endl;
-                }
-
-                std::cout<<"next option: ";
-                std::cin>>option2;
-            }
-
-             else if (option2 ==2) {
-                //create a new account
-                std::string accNum = getAccount(c);
-                std::string accountNumber = createAccount(accNum, c);
-
-                //setting type to credit
-                void *setAccountType = redisCommand(c, "HSET user:account:multiple %s:accountType credit",
-                                                    accountNumber.c_str());
-
-                std::cout << "Set your credit limit: ";
-                int creditLimit;
-                std::cin >> creditLimit;
-                void *setAccountLimit = redisCommand(c, "SET user:account:multiple:%s:limit %i",
-                                                     accountNumber.c_str(), creditLimit);
-                void *setAccountFunds = redisCommand(c, "SET user:account:multiple:%s:funds 0",
-                                                     accountNumber.c_str());
-                 std::cout<<"next option: ";
-                 std::cin>>option2;
-
-            }
-
-            else if(option2=3) {
-
-                //create a new account
-                std::string accNum = getAccount(c);
-                std::string accountNumber = createAccount(accNum, c);
-
-                //setting type to credit
-                void *setAccountType = redisCommand(c, "HSET user:account:multiple %s:accountType debit",
-                                                    accountNumber.c_str());
-
-                void *setAccountFunds = redisCommand(c, "SET user:account:multiple:%s:funds 0",
-                                                     accountNumber.c_str());
-                std::cout<<"next option: ";
-                std::cin>>option2;
-            }
-
-            /*
-
-
-        case '5' :
-            std::cout << "Amount to pay: ";
-            int amount;
-            std::cin >> amount;
-            amount *= (-1);
-            void *watch = redisCommand(c, "WATCH user:account:multiple:%s:funds", accountNumber.c_str());
-            void *multi = redisCommand(c, "MULTI");
-            void *payment = redisCommand(c, "INCRBY user:account:multiple:%s:funds %i", accountNumber.c_str(), amount);
-            void *exitOperation = redisCommand(c, "EXEC");
-
-        case '6':
-            std::cout << "Amount to transfer: ";
-            int amount;
-            std::cin >> amount;
-            amount *= (-1);
-
-            void *watch = redisCommand(c, "WATCH user:account:multiple:%s:funds", accountNumber.c_str());
-            void *multi = redisCommand(c, "MULTI");
-            void *payment = redisCommand(c, "INCRBY user:account:multiple:%s:funds %i", accountNumber.c_str(), amount);
-
-            amount *= (-1);
-
-            void *paymentReceive = redisCommand(c, "INCRBY user:account:multiple:%s:funds %i",
-                                                accountNumber2.c_str(), amount);
-            void *exitOperation = redisCommand(c, "EXEC");
-*/
-
-            }
 
 
     return 0;
