@@ -38,83 +38,96 @@ void menu (std::string &ID, redisContext *c){
     std::cout<<"1-Check balance \n2-Open a new credit account \n3-Open a new debit account"
     "\n4-Pay a bill \n6-Transfer money\n0-Quit\nEnter your option: ";
     std::cin>>option2;
-    while (option2!=0){
+    while (option2!=0) {
 
-    if (option2==1){
-        std::string accountNumber = getAccountNumber(c, ID);
-        if (!getAccountNumber(c, ID).empty()) {
-            std::cerr << "Account could not be accessed" << std::endl;
+        if (option2 == 1) {
+            std::string accountNumber = getAccountNumber(c, ID);
+            if (!getAccountNumber(c, ID).empty()) {
+                std::cerr << "Account could not be accessed" << std::endl;
+            } else if (!getBalance(c, ID, accountNumber).empty()) {
+                std::cout << "Account funds: " << getBalance(c, ID, accountNumber) << std::endl;
+            } else {
+                std::cerr << "Funds could not be accessed" << std::endl;
+            }
+
+            std::cout << "next option: ";
+            std::cin >> option2;
+
+        } else if (option2 == 2) {
+
+            //create a new account
+            std::string accountNumber = createAccount(c, ID);
+
+            //setting type to credit
+            void *setAccountType = redisCommand(c, "SET %s:account:%s:type credit", ID.c_str(),
+                                                accountNumber.c_str());
+
+            std::cout << "Set your funds: ";
+            int funds;
+            std::cin >> funds;
+
+            void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
+                                                 accountNumber.c_str(), funds);
+            //getting the balance
+            std::cout << "Account funds have been set to " << getBalance(c, ID, accountNumber) << std::endl;
+
+            std::cout << "next option: ";
+            std::cin >> option2;
+
+
+        } else if (option2 == 3) {
+
+            //create a new account
+            std::string accountNumber = createAccount(c, ID);
+
+            //setting type to credit
+            void *setAccountType = redisCommand(c, "SET %s:account:%s:type debit", ID.c_str(),
+                                                accountNumber.c_str());
+
+            std::cout << "Set your funds: ";
+            int funds;
+            std::cin >> funds;
+
+            void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
+                                                 accountNumber.c_str(), funds);
+
+            //getting the balance
+            std::cout << "Account funds have been set to " << getBalance(c, ID, accountNumber) << std::endl;
+
+            std::cout << "next option: ";
+            std::cin >> option2;
+
+        } else if (option2 == 4) {
+
+            std::cout << "Amount to pay: ";
+            int amount;
+            std::cin >> amount;
+
+            std::string accountNumber = getAccountNumber(c, ID);
+
+            void *watch = redisCommand(c, "WATCH %s:account:%s", ID.c_str(), accountNumber.c_str());
+
+            std::string accountType = getType(c,ID,accountNumber);
+            std::string funds = getBalance(c, ID, accountNumber);
+
+            if(accountType=="debit"&&amount>std::stoi(funds)){
+                std::cout<<"Insuficient funds"<<std::endl;
+            }else {
+
+                void *multi = redisCommand(c, "MULTI");
+
+                amount *= (-1);
+                void *payment = redisCommand(c, "INCRBY %s:account:%s %i", ID.c_str(), accountNumber.c_str(), amount);
+            }
+
+            void *exitTransaction = redisCommand(c, "EXEC");
+            funds = getBalance(c, ID, accountNumber);
+            std::cout<<"Balance: "<<funds<<std::endl;
+
+            std::cout << "next option: ";
+            std::cin >> option2;
+
         }
-        else if (!getBalance(c, ID, accountNumber).empty()) {
-            std::cout << "Account funds: " << getBalance(c, ID, accountNumber)<< std::endl;
-        } else {
-            std::cerr << "Funds could not be accessed" << std::endl;
-        }
-
-        std::cout<<"next option: ";
-        std::cin>>option2;
-
-    } else if (option2 ==2) {
-
-    //create a new account
-    std::string accountNumber = createAccount(c, ID);
-
-    //setting type to credit
-    void *setAccountType = redisCommand(c, "SET %s:account:%s:type credit", ID.c_str(),
-                                        accountNumber.c_str());
-
-    std::cout << "Set your funds: ";
-    int funds;
-    std::cin >> funds;
-
-    void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
-                                         accountNumber.c_str(), funds);
-    //getting the balance
-    std::cout << "Account funds have been set to " << getBalance(c, ID, accountNumber)<< std::endl;
-
-    std::cout<<"next option: ";
-    std::cin>>option2;
-
-
-} else if(option2==3) {
-
-    //create a new account
-    std::string accountNumber = createAccount(c, ID);
-
-    //setting type to credit
-    void *setAccountType = redisCommand(c, "SET %s:account:%s:type debit", ID.c_str(),
-        accountNumber.c_str());
-
-    std::cout << "Set your funds: ";
-    int funds;
-    std::cin >> funds;
-
-    void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
-                                             accountNumber.c_str(), funds);
-
-    //getting the balance
-    std::cout << "Account funds have been set to " << getBalance(c, ID, accountNumber)<< std::endl;
-
-    std::cout<<"next option: ";
-    std::cin>>option2;
-
-} else if(option2==4){
-
-
-    std::cout << "Amount to pay: ";
-    int amount;
-    std::cin >> amount;
-
-    amount *= (-1);
-
-    std::string accountNumber = getAccountNumber(c, ID);
-
-    void *watch = redisCommand(c, "WATCH %s:account:%s", ID.c_str(), accountNumber.c_str());
-    void *multi = redisCommand(c, "MULTI");
-
-    void *payment = redisCommand(c, "INCRBY %s:account:%s %i", accountNumber.c_str(), amount);
-
-    void *exitOperation = redisCommand(c, "EXEC");}
 
 /*
 case '6':
@@ -186,7 +199,6 @@ int main() {
                 std::cout << "User has NOT been created" << c->err << std::endl;
             }
 
-            menu(ID, c);
 
         }else if(option1==2){
 
@@ -206,6 +218,8 @@ int main() {
             } else {
                 std::cout << "No such user" << c->err << std::endl;
             }
+
+            menu(ID, c);
 
         }
 
