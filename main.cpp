@@ -124,11 +124,10 @@ void *flsh=redisCommand(c, "FLUSHDB");
         } else if (option1 == 2) {
 
             std::string ID =setID();
-            std::string password = setPassword();
 
             redisReply *getUser = (redisReply *) redisCommand(c, "HGET user:%s password", ID.c_str());
 
-            if (getUser != NULL /*&& getUser->str==password.c_str()*/) {
+            if (getUser != NULL && getUser->str==setPassword()) {
                 std::cout << "Logged in " << std::endl;
 
                 int option2;
