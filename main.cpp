@@ -7,32 +7,24 @@
 #include <random>
 #include <hiredis/hiredis.h>
 
-std::string createAccount(redisContext *c, std::string ID){
 
-    int accGenerator = (rand() % 9999) + 1000;
-    std::string accountNumber = std::to_string (accGenerator);
-
-    void *newAccount = redisCommand(c, "SET %s:account %s", ID.c_str(), accountNumber.c_str());
-
-    return accountNumber;
-};
 std::string getAccountNumber(redisContext *c, std::string &ID){
 
     redisReply *getAccountNumber = (redisReply *) redisCommand(c, "GET %s:account", ID.c_str());
     return getAccountNumber->str;
 }
 
-std::string getBalance (redisContext *c, std::string &ID, std::string accountNumber){
+std::string getBalance (redisContext *c, std::string &ID, std::string& accountNumber){
 
     redisReply *getFunds = (redisReply *) redisCommand(c, "GET  %s:account:%s",
-                                                              ID.c_str(),accountNumber.c_str());
+                                                       ID.c_str(),accountNumber.c_str());
     return getFunds->str;
 }
 
-std::string getType (redisContext *c, std::string &ID, std::string accountNumber){
+std::string getType (redisContext *c, std::string &ID, std::string& accountNumber){
 
     redisReply *getType = (redisReply *) redisCommand(c, "GET  %s:account:%s:type",
-                                                              ID.c_str(),accountNumber.c_str());
+                                                      ID.c_str(),accountNumber.c_str());
     return getType->str;
 }
 std::string IDgenerator(){
@@ -81,7 +73,66 @@ std::string setRecipientID() {
 
     return recipientID;
 }
+std::string setRecAccount() {
+    std::cout << "Recipient account: ";
+    std::string recipientacc;
+    std::cin >> recipientacc;
 
+    return recipientacc;
+}
+int setAmount() {
+    std::cout << "Amount to pay: ";
+    int amount;
+    std::cin >> amount;
+
+    return amount;
+}
+void createUser(redisContext *c){
+
+    std::string ID=IDgenerator();
+
+    void *setUser = redisCommand(c, "HMSET user:%s password %s username %s",
+                                 ID.c_str(), setPassword().c_str(), setUsername().c_str());
+
+    //checking if user has been created
+    if (setUser != NULL) {
+        std::cout << "User has been created. \nID " << ID << std::endl;
+        freeReplyObject(setUser);
+    } else {
+        std::cout << "User has NOT been created" << c->err << std::endl;
+    }
+
+}
+std::string createAccount(redisContext *c, std::string& ID, std::string& type){
+
+    using namespace std::chrono;
+    std::random_device rseed;
+    std::mt19937 gen(rseed()*1000*static_cast<long unsigned int>(std::chrono::high_resolution_clock::now().
+            time_since_epoch().count()));
+    std::uniform_int_distribution<int> dst(100000,999999);
+
+    std::string accountNumber = std::to_string (dst(gen));
+
+    void *newAccount = redisCommand(c, "SET %s:account %s", ID.c_str(), accountNumber.c_str());
+    void *setAccountType = redisCommand(c, "SET %s:account:%s:type %s", ID.c_str(),
+                                        accountNumber.c_str(), type.c_str());
+    void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
+                                         accountNumber.c_str(), setFunds());
+    return accountNumber;
+}
+void transaction (redisContext *c, std::string& ID, std::string& accountNumber, std::string &recipientID, std::string &recipientAccount, int amount){
+    void *multi = redisCommand(c, "MULTI");
+
+    void *payment = redisCommand(c, "DECRBY %s:account:%s %i", ID.c_str(),
+                                 accountNumber.c_str(), amount);
+
+    void *receive = redisCommand(c, "INCRBY %s:account:%s %i", recipientID.c_str(),
+                                 recipientAccount.c_str(), amount);
+
+    void *exitTransaction = redisCommand(c, "EXEC");
+}
+
+}
 
 int main() {
 
@@ -94,34 +145,19 @@ int main() {
             printf("Can't allocate redis context\n");
         }
     }
-void *flsh=redisCommand(c, "FLUSHDB");
+
     std::cout << "1-new user\n2-login\n0-Quit";
     int option1;
     std::cin >> option1;
     while (option1 != 0) {
         if (option1 == 1) {
 
-            //generating an ID
-            std::string ID=IDgenerator();
+          createUser(c);
+          std::cout << "next option: ";
+           std::cin >> option1;
 
-            void *setUser = redisCommand(c, "HMSET user:%s password %s username %s",
-                    ID.c_str(), setPassword().c_str(), setUsername().c_str());
-
-            //generating an account for a new user
-            createAccount(c, ID);
-
-            //checking if user has been created
-            if (setUser != NULL) {
-                std::cout << "User has been created. \nID " << ID << std::endl;
-                freeReplyObject(setUser);
-            } else {
-                std::cout << "User has NOT been created" << c->err << std::endl;
-            }
-
-            std::cout << "next option: ";
-            std::cin >> option1;
-
-        } else if (option1 == 2) {
+        }
+        else if (option1 == 2) {
 
             std::string ID =setID();
 
@@ -132,15 +168,17 @@ void *flsh=redisCommand(c, "FLUSHDB");
 
                 int option2;
                 std::cout << "1-Check balance \n2-Open a new credit account \n3-Open a new debit account"
-                             "\n4-Pay a bill \n6-Transfer money\n0-Quit\nEnter your option: ";
+                             "\n4-Transfer money\n0-Quit\nEnter your option: ";
                 std::cin >> option2;
                 while (option2 != 0) {
 
                     if (option2 == 1) {
-                        std::string accountNumber = getAccountNumber(c, ID);
-                        if (!getAccountNumber(c, ID).empty()) {
+                        std::string accountNumber;
+                        std::cin>>accountNumber;
+
+                        if (getAccountNumber(c, ID)==accountNumber && accountNumber.empty()) {
                             std::cerr << "Account could not be accessed" << std::endl;
-                        } else if (!getBalance(c, ID, accountNumber).empty()) {
+                        } else if (getAccountNumber(c, ID)==accountNumber && !getBalance(c, ID, accountNumber).empty()) {
                             std::cout << "Account funds: " << getBalance(c, ID, accountNumber) << std::endl;
                         } else {
                             std::cerr << "Funds could not be accessed" << std::endl;
@@ -151,104 +189,67 @@ void *flsh=redisCommand(c, "FLUSHDB");
 
                     } else if (option2 == 2) {
 
-                        //create a new account
-                        std::string accountNumber = createAccount(c, ID);
+                        std::string type = "credit";
+                        createAccount(c, ID, type);
 
-                        //setting type to credit
-                        void *setAccountType = redisCommand(c, "SET %s:account:%s:type credit", ID.c_str(),
-                                                            accountNumber.c_str());
-
-                        void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
-                                                             accountNumber.c_str(), setFunds());
-
-
+                        std::cout<<"Account number "<<getAccountNumber(c, ID)<<std::endl;
                         std::cout << "next option: ";
                         std::cin >> option2;
 
 
                     } else if (option2 == 3) {
+                        std::string type = "debit";
+                        createAccount(c, ID, type);
 
-                        //setting type to credit
-                        void *setAccountType = redisCommand(c, "SET %s:account:%s:type debit", ID.c_str(),
-                                                            createAccount(c, ID).c_str());
-
-                        void *setAccountFunds = redisCommand(c, "SET %s:account:%s %i", ID.c_str(),
-                                                             getAccountNumber(c, ID).c_str(), setFunds());
-
-
+                        std::cout<<"Account number "<<getAccountNumber(c, ID)<<std::endl;
                         std::cout << "next option: ";
                         std::cin >> option2;
+
 
                     } else if (option2 == 4) {
 
-                        void *watch = redisCommand(c, "WATCH %s:account:%s", ID.c_str(), getAccountNumber(c, ID).c_str());
+                        std::string recipientID = setRecipientID();
+                        std::string recipientAccount = setRecAccount();
 
-                        std::cout << "Amount to pay: ";
-                        int amount;
-                        std::cin >> amount;
+                        redisReply *getRecipient = (redisReply *) redisCommand(c, "GET %s:account ",
+                                                                               recipientID.c_str());
+                        if (getRecipient->type==REDIS_REPLY_NIL || getRecipient->str != recipientAccount){
+                            std::cerr<<"No such user"<<std::endl;
+                        }
+                        else {
+
+			                std::string accountNumber = getAccountNumber(c, ID);
+                            void *watch = redisCommand(c, "WATCH %s:account:%s", ID.c_str(),
+                                                       accountNumber.c_str());
+
+                        int amount = setAmount();
 
 
-                        if (getType(c, ID, getAccountNumber(c, ID)) == "debit" && amount > std::stoi(getBalance(c, ID, getAccountNumber(c, ID)))) {
-                            std::cout << "Insuficient funds" << std::endl;
+			            if (getType(c, ID, accountNumber) == "debit" &&
+                                amount > std::stoi(getBalance(c, ID, accountNumber))) {
+                                std::cout << "Insuficient funds" << std::endl;
                         } else {
 
-                            void *multi = redisCommand(c, "MULTI");
-
-                            amount *= (-1);
-                            void *payment = redisCommand(c, "INCRBY %s:account:%s %i", ID.c_str(), getAccountNumber(c, ID).c_str(), amount);
+                           transaction(c, ID, accountNumber, recipientID, recipientAccount, amount);
                         }
-
-                        void *exitTransaction = redisCommand(c, "EXEC");
-
-                        std::cout << "Balance: " << getBalance(c, ID, getAccountNumber(c, ID))<< std::endl;
 
                         std::cout << "next option: ";
                         std::cin >> option2;
-
-                    } else if (option2 == 5) {
-
-                        std::string recipientID = setRecipientID();
-                        redisReply *getRecipient = (redisReply *) redisCommand(c, "GET %s:account ", recipientID.c_str());
-
-                        if(getRecipient=NULL){
-                            std::cout<<"No such user found in database"<<std::endl;
-                        }else{
-
-                            std::string recipientAccount = getAccountNumber(c, recipientID);
-                            std::cout << "Amount to transfer: ";
-                            int amount;
-                            std::cin >> amount;
-                            amount *= (-1);
-
-                                        void *watch = redisCommand(c, "WATCH %s:account:%s, %s:account:%s", getAccountNumber(c, ID).c_str());
-                                        void *multi = redisCommand(c, "MULTI");
-                                        void *payment = redisCommand(c, "INCRBY user:account:multiple:%s:funds %i", getAccountNumber(c, ID).c_str(), amount);
-
-                                        amount *= (-1);
-
-                                        void *paymentReceive = redisCommand(c, "INCRBY user:account:multiple:%s:funds %i",
-                                                                            recipientID.c_str(), amount);
-
-                            void *exitOperation = redisCommand(c, "EXEC");
-
-                            std::cout << "next option: ";
-                            std::cin >> option2;
                         }
-
                     }
                 }
-
-            freeReplyObject(getUser);
-        } else {
+            }
+            else {
                 std::cout << "No such user" << c->err << std::endl;
             }
             std::cout << "next option: ";
             std::cin >> option1;
 
-        } else if (option1 == 0) std::cout << "bye Felicia";
+        }
+
+    else if (option1 == 0) std::cout << "bye Felicia";
 
     }
-
 
     return 0;
 }
