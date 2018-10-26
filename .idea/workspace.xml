@@ -10,9 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1c1749b0-b43f-48e1-8081-1a8e5f002056" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/redis.dir/main.cpp.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/redis" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/redis" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml___jb_tmp___" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml___jb_tmp___" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
@@ -27,7 +25,8 @@
     <session id="1155353036">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="2" />
+          <entry key="project.closed" value="3" />
+          <entry key="project.open.time.15" value="1" />
           <entry key="project.open.time.20" value="2" />
           <entry key="project.open.time.22" value="2" />
           <entry key="project.open.time.23" value="1" />
@@ -41,7 +40,7 @@
           <entry key="project.open.time.42" value="1" />
           <entry key="project.open.time.45" value="1" />
           <entry key="project.open.time.58" value="1" />
-          <entry key="project.opened" value="20" />
+          <entry key="project.opened" value="21" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -58,12 +57,12 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="cpp" value="9437" />
+          <entry key="cpp" value="9471" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="ObjectiveC" value="9437" />
+          <entry key="ObjectiveC" value="9471" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages" />
@@ -75,8 +74,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="365">
-              <caret line="243" column="26" selection-start-line="243" selection-start-column="26" selection-end-line="243" selection-end-column="26" />
+            <state relative-caret-position="-529">
+              <caret line="168" column="78" lean-forward="true" selection-start-line="168" selection-start-column="78" selection-end-line="168" selection-end-column="78" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
               </folding>
@@ -200,22 +199,22 @@
       <workItem from="1540487791578" duration="465000" />
       <workItem from="1540539059394" duration="992000" />
       <workItem from="1540551374473" duration="785000" />
+      <workItem from="1540554058798" duration="355000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="54397000" />
+    <option name="totallyTimeSpent" value="54752000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="1055" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.15273935" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.15439956" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.21776815" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.21776815" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3997833" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -241,8 +240,8 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/main.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="365">
-          <caret line="243" column="26" selection-start-line="243" selection-start-column="26" selection-end-line="243" selection-end-column="26" />
+        <state relative-caret-position="-529">
+          <caret line="168" column="78" lean-forward="true" selection-start-line="168" selection-start-column="78" selection-end-line="168" selection-end-column="78" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
           </folding>

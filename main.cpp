@@ -132,7 +132,6 @@ void transaction (redisContext *c, std::string& ID, std::string& accountNumber, 
     void *exitTransaction = redisCommand(c, "EXEC");
 }
 
-}
 
 int main() {
 
@@ -174,6 +173,7 @@ int main() {
 
                     if (option2 == 1) {
                         std::string accountNumber;
+                        std::cout<<"account number: ";
                         std::cin>>accountNumber;
 
                         if (getAccountNumber(c, ID)==accountNumber && accountNumber.empty()) {
